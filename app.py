@@ -4,13 +4,6 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 from datetime import datetime
-
-
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package]) 
-
-install('sklearn')
-
 from sklearn.metrics.pairwise import cosine_similarity
 
 # %% load data
