@@ -64,7 +64,7 @@ def get_popular_recommendations(n, genre):
         rating_df
             .groupby('movieId')
             .agg(avg_rating = ('rating', 'mean'), num_ratings = ('rating', 'count'))
-            .merge(movies, on='movieId')
+            .merge(movie_df, on='movieId')
             .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
             [lambda df: df["genres"].str.contains(genres, regex=True)]
 #             .loc[lambda df : ((df['year'] >= time_range[0]) & ( df['year'] <= time_range[1]))]
