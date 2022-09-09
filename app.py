@@ -82,7 +82,7 @@ def popular_n_movies(n, genre):
     rating_df
             .groupby(by='movieId')
             .agg(avg_rating=('rating', 'mean'), num_ratings=('movieId', 'count'))
-            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
+            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.25)
             .sort_values(['combined_rating'], ascending= False)
 #             .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
             .reset_index()
