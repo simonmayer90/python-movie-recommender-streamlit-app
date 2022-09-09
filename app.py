@@ -79,27 +79,27 @@ def get_popular_recommendations(n, genres):
     return pretty_recommendations
 
 
-def popular_n_movies(n, genre):
-    popular_n = (
-    rating_df
-            .groupby(by='movieId')
-            .agg(rating_mean=('rating', 'mean'),
-                 rating_count=('movieId', 'count'),
-                 datetime=('datetime','mean'))
-            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
-            .sort_values(['combined_rating','datetime'], ascending= False)
-#             .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
-            .reset_index()
-    )['movieId'].to_list()
-    result = movie_df.loc[lambda df_ : df_['movieId'].isin(popular_n)]
-    if genre != 'Any':
-            result = result.loc[lambda df_ : df_['genres'].str.contains(genre)]
-    df_rec = result.head(n).reset_index(drop=True)
-    df_rec = df_rec[['title', 'genres', 'year']].reset_index(drop=True)
-    new_index = ['movie-{}'.format(i+1) for i in range(n)]
-    df_rec.index = new_index
-    pretty_rec = df_rec.style.pipe(make_pretty)
-    return pretty_rec
+# def popular_n_movies(n, genre):
+#     popular_n = (
+#     rating_df
+#             .groupby(by='movieId')
+#             .agg(rating_mean=('rating', 'mean'),
+#                  rating_count=('movieId', 'count'),
+#                  datetime=('datetime','mean'))
+#             .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
+#             .sort_values(['combined_rating','datetime'], ascending= False)
+# #             .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
+#             .reset_index()
+#     )['movieId'].to_list()
+#     result = movie_df.loc[lambda df_ : df_['movieId'].isin(popular_n)]
+#     if genre != 'Any':
+#             result = result.loc[lambda df_ : df_['genres'].str.contains(genre)]
+#     df_rec = result.head(n).reset_index(drop=True)
+#     df_rec = df_rec[['title', 'genres', 'year']].reset_index(drop=True)
+#     new_index = ['movie-{}'.format(i+1) for i in range(n)]
+#     df_rec.index = new_index
+#     pretty_rec = df_rec.style.pipe(make_pretty)
+#     return pretty_rec
 
 # movie/item based
 def item_n_movies(movie_name, n):
