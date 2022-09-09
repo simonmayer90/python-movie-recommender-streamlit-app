@@ -59,7 +59,7 @@ def make_pretty(styler):
     return styler
 
 # population based
-def get_popular_recommendations(n, genre):
+def get_popular_recommendations(n, genres):
     recommendations = (
         rating_df
             .groupby('movieId')
