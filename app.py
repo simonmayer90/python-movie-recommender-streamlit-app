@@ -1,4 +1,3 @@
-
 # imports
 import sklearn
 import streamlit as st
@@ -8,9 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from PIL import Image
 from datetime import datetime
 import os
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
+
 # %% load data
 movie_df = pd.read_csv('https://raw.githubusercontent.com/sherwan-m/WBSFLIX_Recommender_System/main/ml-latest-small/movies.csv')
 rating_df = pd.read_csv('https://raw.githubusercontent.com/sherwan-m/WBSFLIX_Recommender_System/main/ml-latest-small/ratings.csv')
@@ -84,11 +81,9 @@ def popular_n_movies(n, genre):
     popular_n = (
     rating_df
             .groupby(by='movieId')
-            .agg(rating_mean=('rating', 'mean'),
-                 rating_count=('movieId', 'count'),
-                 datetime=('datetime','mean'))
+            .agg(avg_rating=('rating', 'mean'), num_ratings=('movieId', 'count'))
             .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
-            .sort_values(['combined_rating','datetime'], ascending= False)
+            .sort_values(['combined_rating'], ascending= False)
 #             .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
             .reset_index()
     )['movieId'].to_list()
@@ -261,8 +256,8 @@ if pop_based_rec:
 
 
     if submit_button_pop:
-#         popular_movie_recs = get_popular_recommendations(nr_rec, genre[0])
-        popular_movie_recs = popular_n_movies(nr_rec, genre[0])
+        popular_movie_recs = get_popular_recommendations(nr_rec, genre[0])
+#        popular_movie_recs = popular_n_movies(nr_rec, genre[0])
         st.table(popular_movie_recs)
 
 # to put some space in between options
