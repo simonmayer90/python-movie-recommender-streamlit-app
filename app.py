@@ -86,7 +86,8 @@ def popular_n_movies(n, genre):
             .agg(rating_mean=('rating', 'mean'),
                  rating_count=('movieId', 'count'),
                  datetime=('datetime','mean'))
-            .sort_values(['rating_mean','rating_count','datetime'], ascending= False)
+            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
+            .sort_values(['combined_rating','datetime'], ascending= False)
 #             .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
             .reset_index()
     )['movieId'].to_list()
@@ -259,8 +260,8 @@ if pop_based_rec:
 
 
     if submit_button_pop:
-        popular_movie_recs = get_popular_recommendations(nr_rec, genre[0])
-#         popular_movie_recs = popular_n_movies(nr_rec, genre[0])
+#         popular_movie_recs = get_popular_recommendations(nr_rec, genre[0])
+        popular_movie_recs = popular_n_movies(nr_rec, genre[0])
         st.table(popular_movie_recs)
 
 # to put some space in between options
