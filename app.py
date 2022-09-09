@@ -67,7 +67,7 @@ def popular_n_movies(n, genre):
                  rating_count=('movieId', 'count'),
                  datetime=('datetime','mean'))
             .sort_values(['rating_mean','rating_count','datetime'], ascending= False)
-            .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
+#             .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
             .reset_index()
     )['movieId'].to_list()
     result = movie_df.loc[lambda df_ : df_['movieId'].isin(popular_n)]
