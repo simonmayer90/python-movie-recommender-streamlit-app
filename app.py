@@ -65,7 +65,7 @@ def get_popular_recommendations(n, genres):
             .groupby('movieId')
             .agg(avg_rating = ('rating', 'mean'), num_ratings = ('rating', 'count'))
             .merge(movie_df, on='movieId')
-            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.25)
+            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
             [lambda df: df["genres"].str.contains(genres, regex=True)]
 #             .loc[lambda df : ((df['year'] >= time_range[0]) & ( df['year'] <= time_range[1]))]
             .sort_values('combined_rating', ascending=False)
@@ -82,7 +82,7 @@ def popular_n_movies(n, genre):
     rating_df
             .groupby(by='movieId')
             .agg(avg_rating=('rating', 'mean'), num_ratings=('movieId', 'count'))
-            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.25)
+            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
             .sort_values(['combined_rating'], ascending= False)
 #             .loc[lambda df_ :df_['rating_count'] >= (df_['rating_count'].mean() + df_['rating_count'].median())/2]
             .reset_index()
