@@ -59,6 +59,24 @@ def make_pretty(styler):
     return styler
 
 # population based
+def get_popular_recommendations(n, genre):
+    recommendations = (
+        rating_df
+            .groupby('movieId')
+            .agg(avg_rating = ('rating', 'mean'), num_ratings = ('rating', 'count'))
+            .merge(movies, on='movieId')
+            .assign(combined_rating = lambda x: x['avg_rating'] * x['num_ratings']**0.5)
+            [lambda df: df["genres"].str.contains(genres, regex=True)]
+#             .loc[lambda df : ((df['year'] >= time_range[0]) & ( df['year'] <= time_range[1]))]
+            .sort_values('combined_rating', ascending=False)
+            .head(n)
+            [['title', 'avg_rating', 'genres']]
+            .rename(columns= {'title': 'Movie Title', 'avg_rating': 'Average Rating', 'genres': 'Genres'})
+    )
+    pretty_recommendations = recommendations.style.pipe(make_pretty)
+    return pretty_recommendations
+
+
 def popular_n_movies(n, genre):
     popular_n = (
     rating_df
@@ -239,7 +257,8 @@ if pop_based_rec:
 
 
     if submit_button_pop:
-        popular_movie_recs = popular_n_movies(nr_rec, genre[0])
+        popular_movie_recs = get_popular_recommendations(nr_rec, genre[0])
+#         popular_movie_recs = popular_n_movies(nr_rec, genre[0])
         st.table(popular_movie_recs)
 
 # to put some space in between options
