@@ -260,8 +260,8 @@ if pop_based_rec:
 
 
     if submit_button_pop:
-#         popular_movie_recs = get_popular_recommendations(nr_rec, genre[0])
-        popular_movie_recs = popular_n_movies(nr_rec, genre[0])
+        popular_movie_recs = get_popular_recommendations(nr_rec, genre[0])
+#         popular_movie_recs = popular_n_movies(nr_rec, genre[0])
         st.table(popular_movie_recs)
 
 # to put some space in between options
