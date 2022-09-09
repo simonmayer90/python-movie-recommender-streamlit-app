@@ -6,13 +6,15 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from PIL import Image
 from datetime import datetime
-
+import os
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 # %% load data
 movie_df = pd.read_csv('https://raw.githubusercontent.com/sherwan-m/WBSFLIX_Recommender_System/main/ml-latest-small/movies.csv')
 rating_df = pd.read_csv('https://raw.githubusercontent.com/sherwan-m/WBSFLIX_Recommender_System/main/ml-latest-small/ratings.csv')
 links_df = pd.read_csv('https://raw.githubusercontent.com/sherwan-m/WBSFLIX_Recommender_System/main/ml-latest-small/links.csv')
 tags_df = pd.read_csv('https://raw.githubusercontent.com/sherwan-m/WBSFLIX_Recommender_System/main/ml-latest-small/tags.csv')
-
 # %% format dataframes
 # MOVIE DF:
 movie_df = (
@@ -38,7 +40,6 @@ genre_list.sort()
 genre_list.insert(0, 'Any')
 
 year_list = list(set(list(movie_df['year'])))[1:]
-
 
 # create a list of movies
 movie_list = list(set(list(movie_df['title'])))
@@ -133,49 +134,91 @@ def user_n_movies(user_id, n):
     pretty_rec = top_recommendations.style.pipe(make_pretty)
     return pretty_rec
 
+# user based with year as input
+def top_n_user_based(user_id , n , genres, time_period):
+    if user_id not in rating_df["userId"]:
+        return pd.DataFrame(columns= ['movieId', 'title', 'genres', 'year'])
 
+    users_items = pd.pivot_table(data=rating_df,
+                                 values='rating',
+                                 index='userId',
+                                 columns='movieId')
+    users_items.fillna(0, inplace=True)
+    user_similarities = pd.DataFrame(cosine_similarity(users_items),
+                                 columns=users_items.index,
+                                 index=users_items.index)
+    weights = (
+    user_similarities.query("userId!=@user_id")[user_id] / sum(user_similarities.query("userId!=@user_id")[user_id])
+          )
 
-# i will write another version of this function can manage time period of movies too
-x = popular_n_movies(5, 'Any')
+    new_userids = weights.sort_values(ascending=False).head(100).index.tolist()
+    new_userids.append(user_id)
+    new_ratings = rating_df.loc[lambda df_: df_['userId'].isin(new_userids)]
+    new_users_items = pd.pivot_table(data=new_ratings,
+                                 values='rating',
+                                 index='userId',
+                                 columns='movieId')
 
+    new_users_items.fillna(0, inplace=True)
+    new_user_similarities = pd.DataFrame(cosine_similarity(new_users_items),
+                                         columns=new_users_items.index,
+                                         index=new_users_items.index)
+    new_weights = (
+    new_user_similarities.query("userId!=@user_id")[user_id] / sum(new_user_similarities.query("userId!=@user_id")[user_id])
+          )
+    not_watched_movies = new_users_items.loc[new_users_items.index!=user_id, new_users_items.loc[user_id,:]==0]
+    weighted_averages = pd.DataFrame(not_watched_movies.T.dot(new_weights), columns=["predicted_rating"])
+    recommendations = weighted_averages.merge(movie_df, left_index=True, right_on="movieId").sort_values("predicted_rating", ascending=False)
+    recommendations = recommendations.loc[lambda df_ : ((df_['year'] >= time_period[0]) & ( df_['year'] <= time_period[1]))]
+    if len(genres)>0:
+        result = pd.DataFrame(columns=['predicted_rating', 'movieId', 'title', 'genres', 'year'])
+        for genre in genres:
+            result = pd.concat([result, recommendations.loc[lambda df_ : df_['genres'].str.contains(genre)]])
+
+        result.drop_duplicates(inplace=True)
+        result = result.sort_values("predicted_rating", ascending=False)
+        result.reset_index(inplace=True, drop= True)
+        return result.drop(columns=['predicted_rating']).head(n)
+
+    return recommendations.reset_index(drop=True).drop(columns=['predicted_rating']).head(n)
 # %% STREAMLIT
 # Set configuration
 st.set_page_config(page_title="WBSFLIX",
                    page_icon="🎬",
                    initial_sidebar_state="expanded",
-                   # layout="wide"
+                   layout="wide"
                    )
 
 # set colors: These has to be set on the setting menu online
     # primary color: #FF4B4B, background color:#0E1117
-    # text color: #FAFAFA, secindary background color: #E50914
+    # text color: #FAFAFA, secondary background color: #E50914
 
 # Set the logo of app
-st.sidebar.image("D:/Dev/wbs-ds-projekte/git-versions/WBSFlix-Recommender-System/app/wbs_logo.png",
+st.sidebar.image("wbs_logo.png",
                  width=300, clamp=True)
-welcome_img = Image.open('D:/Dev/wbs-ds-projekte/git-versions/WBSFlix-Recommender-System/app/welcome_page_img01.png')
+welcome_img = Image.open('welcome_page_img01.png')
 st.image(welcome_img)
-st.markdown("""
+st.sidebar.markdown("""
 # 🎬 Welcome to the next generation movie recommendation app
 """)
 
 # %% APP WORKFLOW
-st.markdown("""
+st.sidebar.markdown("""
 ### How may we help you?
 """
 )
 # Popularity based recommender system
-genre_default, n_default = None, None
-pop_based_rec = st.checkbox("Show me the all time favourites",
+genre_default = None
+pop_based_rec = st.sidebar.checkbox("Show me the all time favourites",
                             False,
                             help="Movies that are liked by many people")
 
 
 if pop_based_rec:
-    st.markdown("### Select Genre and Nr of movie recommendations")
+    st.markdown("### Select the Genre and the Number of recommendations")
     genre_default, n_default = None, 5
     with st.form(key="pop_form"):
-        # genre_default, year_default = ['Any'], ['Any']
+        genre_default = ['Any']
         genre = st.multiselect(
                 "Genre",
                 options=genre_list,
@@ -191,6 +234,7 @@ if pop_based_rec:
                         help="How many movie recommendations would you like to receive?",
                         )
 
+
         submit_button_pop = st.form_submit_button(label="Submit")
 
 
@@ -203,12 +247,10 @@ st.write("")
 st.write("")
 st.write("")
 
-item_based_rec = st.checkbox("Show me a movie like this",
+item_based_rec = st.sidebar.checkbox("Show me a movie like this",
                              False,
                              help="Input some movies and we will show you similar ones")
-from random import choice
-short_movie_list = ['Prestige, The (2006)', 'Toy Story (1995)',
-                    'No Country for Old Men (2007)']
+
 if item_based_rec:
     st.markdown("### Tell us a movie you like:")
     with st.form(key="movie_form"):
@@ -217,7 +259,8 @@ if item_based_rec:
                                     options=pd.Series(movie_list),
                                     help="Select a movie you like",
                                     key='item_select',
-                                    default=choice(short_movie_list))
+                                    # default=choice(short_movie_list)
+                                    )
 
         nr_rec = st.slider("Number of recommendations",
                            min_value=1,
@@ -241,7 +284,7 @@ st.write("")
 st.write("")
 st.write("")
 
-user_based_rec = st.checkbox("I want to get personalized recommendations",
+user_based_rec = st.sidebar.checkbox("I want to get personalized recommendations",
                              False,
                              help="Login to get personalized recommendations")
 
@@ -252,12 +295,13 @@ if user_based_rec:
 
         user_id = st.number_input("Please enter your user id", step=1,
                                   min_value=1)
-        # genre_default, year_default = ['Any'], ['Any']
-        # genre = st.multiselect(
-        #         "Genre",
-        #         options=genre_list,
-        #         help="Select the genre of the movie you would like to watch",
-        #         default=genre_default)
+        genre_default = ['Any']
+        genre = st.multiselect(
+                "Genre",
+                options=genre_list,
+                help="Select the genre of the movie you would like to watch",
+                #default=genre_default
+                )
 
         nr_rec = st.slider("Number of recommendations",
                            min_value=1,
@@ -268,9 +312,16 @@ if user_based_rec:
                            help="How many movie recommendations would you like to receive?",
                            )
 
+        time_period = st.slider('years:', min_value=1900,
+                                max_value=2018,
+                                value=(2010,2018),
+                                step=1)
+
         submit_button_user = st.form_submit_button(label="Submit")
 
-
     if submit_button_user:
-        user_movie_recs = user_n_movies(user_id, nr_rec)
-        st.table(user_movie_recs)
+        # user_movie_recs = user_n_movies(user_id, nr_rec)
+        user_movie_recs = top_n_user_based(user_id, nr_rec, genre, time_period)
+
+        # st.write(time_period)
+        st.table(user_movie_recs[['title', 'genres']].style.pipe(make_pretty))
