@@ -3,9 +3,9 @@ import sklearn
 import streamlit as st
 import pandas as pd
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 from PIL import Image
 from datetime import datetime
-from sklearn.metrics.pairwise import cosine_similarity
 
 # %% load data
 movie_df = pd.read_csv('https://raw.githubusercontent.com/sherwan-m/WBSFLIX_Recommender_System/main/ml-latest-small/movies.csv')
@@ -151,9 +151,9 @@ st.set_page_config(page_title="WBSFLIX",
     # text color: #FAFAFA, secindary background color: #E50914
 
 # Set the logo of app
-st.sidebar.image("wbs_logo.png",
+st.sidebar.image("D:/Dev/wbs-ds-projekte/git-versions/WBSFlix-Recommender-System/app/wbs_logo.png",
                  width=300, clamp=True)
-welcome_img = Image.open('welcome_page_img01.png')
+welcome_img = Image.open('D:/Dev/wbs-ds-projekte/git-versions/WBSFlix-Recommender-System/app/welcome_page_img01.png')
 st.image(welcome_img)
 st.markdown("""
 # 🎬 Welcome to the next generation movie recommendation app
