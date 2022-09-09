@@ -60,6 +60,8 @@ def make_pretty(styler):
 
 # population based
 def get_popular_recommendations(n, genres):
+    if genres == "Any":
+        genres = ""
     recommendations = (
         rating_df
             .groupby('movieId')
